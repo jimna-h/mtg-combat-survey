@@ -1304,7 +1304,7 @@
         type: "response", participantId, arm: assignedArm, reminder: state.reminderText,
         score: answers.filter((a) => a.correct).length, eligible: true, priorPlay, consented: true, lookedUp: lookup, tabBlurs: blurs, startedAt, finishedAt: new Date().toISOString(), answers
       };
-      $("submit-btn").disabled = true; $("test-output").textContent = "";
+      $("submit-btn").disabled = true; $("submit-status").textContent = "Submitting…"; $("test-output").textContent = "";
       const ok = await sendPayload(payload, $("submit-status"), $("test-output"), "Thank you — your responses were submitted.");
       if (ok && pendingEmail) await sendPayload({ type: "email", participantId, email: pendingEmail }, {}, $("test-output"), "");
       if (!ok) $("submit-btn").disabled = false;
@@ -1335,10 +1335,9 @@
       pendingEmail = em;
       if (!ELIGIBLE_PLAY.includes(choice)) {
         $("elig-btn").disabled = true;
-        const recorded = await sendPayload({ type: "eligibility", participantId, eligible: false, priorPlay: choice, consented: true, startedAt, finishedAt: new Date().toISOString() }, msg, $("elig-output"), "");
-        if (em && recorded) await sendPayload({ type: "email", participantId, email: em }, {}, $("elig-output"), "");
-        if (!recorded) { $("elig-btn").disabled = false; return; }
         msg.textContent = "Thank you for your interest. This survey is for people who have played very little Magic, so you're not eligible." + (em ? " We'll still send you the results." : "") + " You can close this page.";
+        void sendPayload({ type: "eligibility", participantId, eligible: false, priorPlay: choice, consented: true, startedAt, finishedAt: new Date().toISOString() }, {}, $("elig-output"), "");
+        if (em) void sendPayload({ type: "email", participantId, email: em }, {}, $("elig-output"), "");
         return;
       }
       const savedAssignment = sessionStorage.getItem(ASSIGNMENT_KEY);
