@@ -801,7 +801,16 @@
       z-index: 4;
       outline: 3px solid #a3e635 !important;
       outline-offset: 4px;
-      box-shadow: 0 0 0 7px rgba(163, 230, 53, .2), 0 0 20px rgba(163, 230, 53, .65) !important;
+      animation: tutorial-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes tutorial-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(163, 230, 53, .28), 0 0 12px rgba(163, 230, 53, .55); }
+      50% { box-shadow: 0 0 0 10px rgba(163, 230, 53, .08), 0 0 28px rgba(163, 230, 53, .9); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tutorial-focus { animation: none; box-shadow: 0 0 0 7px rgba(163, 230, 53, .35), 0 0 20px rgba(163, 230, 53, .8) !important; }
     }
 
     button:focus-visible,
@@ -887,6 +896,8 @@
       <p>This is a short, voluntary class-project survey. You'll work through 10 combat scenarios from a card game. No
         names are collected and your answers are used only for this project. You can stop at any time. If you choose to
         share an email below, it is stored separately from your answers and used only to send you the results.</p>
+      <p>You don't need to know the rules in advance, and we don't expect you to know the answers. Please do your best
+        to figure out what happens in each combat scenario based on their abilities.</p>
       <label style="display:block;margin:10px 0"><input type="checkbox" id="consent"> I understand and agree to take
         part.</label>
         <p><strong>How familiar are you with the rules of Magic: The Gathering right now?</strong></p>
@@ -1046,8 +1057,8 @@
             </li>
             <li class="step-item" data-step="3" onclick="jumpToStep(3)">
               <strong>4. Deal Combat Damage</strong>
-              Evaluate whether blocks are legal, then mark creatures destroyed or tapped, update life totals, and record
-              any other outcomes.
+              Both creatures deal combat damage to each other at the same time. Then mark creatures destroyed or tapped,
+              update life totals, and record any other outcomes.
             </li>
           </ol>
         </div>
@@ -1098,7 +1109,7 @@
       you: { life: 10, tapped: false, destroyed: false, attacking: false },
       opp: { life: 10, tapped: false, destroyed: false, blocking: false, illegalBlock: false }
     };
-    let timers = [], tutorialStep = 0, currentQuestion = 1, inQuiz = false, loading = false, practice9 = false;
+    let timers = [], tutorialStep = 0, currentQuestion = 1, inQuiz = false, loading = false, practice9 = false, tutorialCombatPlayed = false;
     let assignedArm = null;
     const participantId = sessionStorage.getItem("mtgSurveyParticipantId") || crypto.randomUUID();
     sessionStorage.setItem("mtgSurveyParticipantId", participantId);
@@ -1152,6 +1163,7 @@
       const m = meta[currentQuestion];
       m.confirmed = true; m.answer = readAnswer();
       updateConfirmUI(); renderQuestionNav(); updateFinish();
+      if (currentQuestion < questionData.length) navigateQuestion(1);
     }
     function saveQuestionState() {
       meta[currentQuestion].ms += Date.now() - qStart; qStart = Date.now();
@@ -1207,6 +1219,7 @@
       if (direction > 0 && tutorialStep === 5 && !state.opp.destroyed) { hint.textContent = "Mark the blocker as destroyed to continue."; return; }
       if (direction > 0 && tutorialStep === 6 && !(practice9 && Number($("opp-life").value) === 10)) { hint.textContent = "Set the opponent's life to 9, then back to 10, to continue."; return; }
       if (direction > 0 && tutorialStep === 7) {
+        if (!tutorialCombatPlayed) { hint.textContent = "Press Play Combat to watch the combat sequence before starting the quiz."; return; }
         $("tutorial-guide").hidden = true; $("question-instructions").hidden = false; $("question-nav").hidden = false;
         $("bushido-demo").hidden = true; $("regular-battlefield").hidden = false; $("actions-bar").hidden = false;
         document.querySelectorAll(".tutorial-focus").forEach((el) => el.classList.remove("tutorial-focus"));
@@ -1215,20 +1228,24 @@
       tutorialStep = Math.max(0, Math.min(7, tutorialStep + direction));
       $("tutorial-back").disabled = tutorialStep === 0;
       const steps = [
-        ["Question 0 · Welcome", "This survey asks you to work out what happens in 10 short combat scenarios from the card game Magic: The Gathering. No experience is needed. Some cards have abilities printed on them, like the example card shown here. Answer using the cards on your screen, and please don't look anything up or discuss the survey with anyone until you're done. First, a short walkthrough."],
+        ["Question 0 · Welcome", "This survey asks you to work out what happens in 10 short combat scenarios from the card game Magic: The Gathering. No experience is needed. Most creatures have abilities such as flying or lifelink. Your survey version may or may not explain what an ability does. Either way, do your best to figure out how it affects combat. Please don't look anything up or discuss the survey until you're done. First, we'll practice in the play area shown here."],
         ["Question 0 · Read the cards", "These practice creatures have no abilities. There are two numbers that matter for creatures: power is the amount of damage the creature deals (like an attack stat), and toughness is the amount of damage it takes to destroy the creature (like a health stat). These can be seen in the bottom right of their card: Your Highland Giant is a 3/4, so it has 3 power and 4 toughness."],
         ["Question 0 · Declare attackers", "When your Highland Giant attacks your opponent, it becomes tapped and I'll mark it with a red sword. Being 'tapped' basically just means it's been 'used up' for the turn."],
         ["Question 0 · Declare blockers", "The opponent declares Sanctuary Cat as blocking your Highland Giant. I'll mark it with a blue shield and highlight both of them. Blocking does not cause creatures to tap."],
         ["Question 0 · Evaluate blockers", "Before damage, evaluate each block for legality. There's nothing stopping the Sanctuary Cat from blocking your Highland Giant, so no worries here. In other questions, a block may not be legal, so think about that before resolving damage."],
-        ["Question 0 · Deal combat damage", "Now resolve damage. Highland Giant has a power of 3, so it deals 3 damage to the blocking Sanctuary Cat. The cat's toughness is only 2, so the giant's 3 damage is enough to destroy it. The cat's power is only 1 though, and your giant's toughness is 4 so it survives. Mark the blocker destroyed before continuing."],
+        ["Question 0 · Deal combat damage", "Now resolve combat damage. Both creatures deal damage to each other at the same time: Highland Giant deals 3 damage to Sanctuary Cat, and Sanctuary Cat deals 1 damage to Highland Giant. The cat has 2 toughness, so 3 damage destroys it. The giant has 4 toughness, so 1 damage does not destroy it. Mark the blocker destroyed before continuing."],
         ["Question 0 · Practice life totals", "Because your attacker was blocked, the opponent takes no damage, so their life stays at 10. To practice the life controls, set the opponent's life to 9, then set it back to 10."],
-        ["Question 0 · Complete", "Practice complete. For each question, you can press Play Combat to get to the state that the scenario describes (this will treat all creatures as without abilities, so it may do things that you need to correct). Continue to Question 1 when you're ready."]
+        ["Question 0 · Complete", "Practice complete. Press Play Combat to watch the combat sequence. During the quiz, you can use it to set up the scenario, but it treats creatures as if they have no abilities, so you may need to correct the result. Press it now to continue."]
       ];
       $("tutorial-step-label").textContent = steps[tutorialStep][0];
       $("tutorial-copy").textContent = steps[tutorialStep][1];
-      $("bushido-demo").classList.toggle("visible", tutorialStep === 0);
-      $("bushido-demo").hidden = tutorialStep !== 0;
-      $("regular-battlefield").hidden = tutorialStep === 0;
+      next.disabled = tutorialStep === 7 && !tutorialCombatPlayed;
+      $("bushido-demo").hidden = true;
+      $("regular-battlefield").hidden = false;
+      if (!inQuiz) {
+        setCard("you", C("Highland Giant", "Creature — Giant", "3/4"));
+        setCard("opp", C("Sanctuary Cat", "Creature — Cat", "1/2"));
+      }
       next.textContent = tutorialStep === 7 ? "Continue to Question 1" : "Next";
       if (tutorialStep < 2) { state.you.attacking = false; state.you.tapped = false; state.opp.blocking = false; }
       else { state.you.attacking = true; state.you.tapped = true; state.opp.blocking = tutorialStep >= 3; }
@@ -1271,6 +1288,11 @@
     function jumpToStep(step) { clearTimers(); applyStepState(step); markDirty(); }
     function playCombatSequence() {
       resetBoard();
+      if (!inQuiz && tutorialStep === 7) {
+        tutorialCombatPlayed = true;
+        $("tutorial-hint").textContent = "Combat playback complete. Continue to Question 1 when you're ready.";
+        $("tutorial-next").disabled = false;
+      }
       markDirty();
       timers.push(setTimeout(() => applyStepState(1), 450));
       timers.push(setTimeout(() => applyStepState(2), 1450));
@@ -1369,7 +1391,7 @@
       setReminderMode(assignedArm === "reminder");
       $("eligibility-screen").hidden = true; $("question-screen").hidden = false;
     }
-    resetBoard(); renderIntroCard(); moveTutorial(0);
+    resetBoard(); moveTutorial(0);
   </script>
 </body>
 
