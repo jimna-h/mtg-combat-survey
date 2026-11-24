@@ -889,18 +889,14 @@
         share an email below, it is stored separately from your answers and used only to send you the results.</p>
       <label style="display:block;margin:10px 0"><input type="checkbox" id="consent"> I understand and agree to take
         part.</label>
-      <p><strong>How many Magic: The Gathering games have you played in your lifetime?</strong></p>
+        <p><strong>How familiar are you with the rules of Magic: The Gathering right now?</strong></p>
       <fieldset style="border:0;padding:0;margin:0">
-        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="none_unknown"> I literally
-          don't even know what Magic is</label>
-        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="none_recall"> None that I
-          remember</label>
-        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="lt5"> For sure less than
-          5</label>
-        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="familiar"> I'm pretty familiar
-          with the game</label>
-        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="expert"> I am literally Jon
-          Finkel</label>
+        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="not_familiar"> I'm not
+          familiar with the rules</label>
+        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="beginner"> I know some
+          rules, but still feel like a beginner</label>
+        <label style="display:block;margin:6px 0"><input type="radio" name="play" value="comfortable"> I'm
+          comfortable with the rules</label>
       </fieldset>
       <p style="margin-top:14px"><label for="results-email"><strong>Optional:</strong> want a copy of the final results?
           Enter your email.</label><br>
@@ -1344,7 +1340,7 @@
         statusEl.textContent = thanks; return true;
       } catch (e) { statusEl.textContent = "Submission failed. Please try again."; return false; }
     }
-    const ELIGIBLE_PLAY = ["none_unknown", "none_recall", "lt5"];
+    const ELIGIBLE_PLAY = ["not_familiar", "beginner"];
     let priorPlay = null, pendingEmail = "";
     async function submitEligibility() {
       const msg = $("elig-status"), choice = document.querySelector('input[name="play"]:checked')?.value;
