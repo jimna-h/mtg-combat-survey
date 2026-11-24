@@ -16,7 +16,7 @@ function setup() {
   const emailBook = SpreadsheetApp.create("MTG Survey Results Requests");
   const emailSheet = emailBook.getSheets()[0];
   emailSheet.setName("Email Requests");
-  emailSheet.appendRow(["received_at", "participant_id", "email"]);
+  emailSheet.appendRow(["email"]);
 
   const properties = PropertiesService.getScriptProperties();
   properties.setProperty("RESPONSE_SPREADSHEET_ID", responseBook.getId());
@@ -30,7 +30,7 @@ function doPost(event) {
   lock.waitLock(30000);
   try {
     const data = JSON.parse(event.postData.contents || "{}");
-    if (!data.participantId) throw new Error("Missing participantId");
+    if (data.type !== "email" && !data.participantId) throw new Error("Missing participantId");
 
     if (data.type === "response") {
       validateResponse_(data);
@@ -49,9 +49,10 @@ function doPost(event) {
     } else if (data.type === "email") {
       const email = String(data.email || "").trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Invalid email");
-      getSheet_("EMAIL_SPREADSHEET_ID", "Email Requests").appendRow([
-        new Date(), data.participantId, email
-      ]);
+      const sheet = getSheet_("EMAIL_SPREADSHEET_ID", "Email Requests");
+      migrateEmailSheet_(sheet);
+      sheet.appendRow([email]);
+      shuffleEmailRows_(sheet);
     } else {
       throw new Error("Unknown submission type");
     }
@@ -62,6 +63,38 @@ function doPost(event) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function migrateEmailSheet_(sheet) {
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+  if (lastRow === 0) {
+    sheet.appendRow(["email"]);
+    return;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  const emailColumn = headers.findIndex(header => String(header).toLowerCase() === "email") + 1;
+  if (emailColumn !== 1 || lastColumn !== 1 || String(headers[0]).toLowerCase() !== "email") {
+    const emails = emailColumn > 0 && lastRow > 1
+      ? sheet.getRange(2, emailColumn, lastRow - 1, 1).getValues().flat().filter(String)
+      : [];
+    sheet.clearContents();
+    sheet.getRange(1, 1, emails.length + 1, 1)
+      .setValues([["email"], ...emails.map(value => [value])]);
+  }
+}
+
+function shuffleEmailRows_(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 2) return;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  for (let i = rows.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+  }
+  sheet.getRange(2, 1, rows.length, 1).setValues(rows);
 }
 
 function validateResponse_(data) {

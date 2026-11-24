@@ -16,7 +16,7 @@ The survey sends one response payload to a Google Apps Script web app. The scrip
 4. In `index.html`, replace `PASTE_DEPLOYED_APPS_SCRIPT_URL_HERE` in `ENDPOINT` with that URL.
 5. Host the updated site over HTTPS and submit a response to confirm it appears in the `Responses` tab.
 
-The web app is public to submitters, so do not put private data or credentials in its source. The optional email address is written to the separate `MTG Survey Results Requests` spreadsheet, not the response spreadsheet. Limit access to both spreadsheets to the project team.
+The web app is public to submitters, so do not put private data or credentials in its source. The optional email address is written by itself to the separate `MTG Survey Results Requests` spreadsheet, not the response spreadsheet. When the updated script next receives an email request, it keeps existing email values and removes the timestamp and participant ID columns from that email sheet, then shuffles the email rows. Limit access to both spreadsheets to the project team.
 
 ## Assignment
 

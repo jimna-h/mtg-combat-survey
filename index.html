@@ -856,6 +856,11 @@
 
 <body>
   <div class="page">
+    <div class="dev-bar" id="dev-bar" hidden>
+      <span>Test mode · submissions stay in this browser</span>
+      <div><button id="btn-no-rem" class="active" onclick="setReminderMode(false)">No Reminder Text</button>
+        <button id="btn-rem" onclick="setReminderMode(true)">With Reminder Text</button></div>
+    </div>
     <section class="card-panel" id="eligibility-screen" style="max-width:640px;margin:16px auto;width:100%">
       <h2>Magic: The Gathering Combat Survey</h2>
       <p>This is a short, voluntary class-project survey. You'll work through 10 combat scenarios from a card game. No
@@ -1034,7 +1039,9 @@
   </div>
 
   <script>
+    const TEST_MODE = new URLSearchParams(location.search).has("test");
     const ENDPOINT = "https://script.google.com/macros/s/AKfycbyOGm_ocnnoBuIeZBR5aqGh5xUjFVesrtLKB2fLRmYeHrwpcFUXUkd5Sl5dqLxkTXgF/exec";
+    if (TEST_MODE) document.getElementById("dev-bar").hidden = false;
     const KW = {
       flying: ["Flying", "This creature can't be blocked except by creatures with flying or reach."],
       lifelink: ["Lifelink", "Damage dealt by this creature also causes you to gain that much life."],
@@ -1214,6 +1221,8 @@
     function clearTimers() { timers.forEach((id) => clearTimeout(id)); timers = []; }
     function setReminderMode(showReminder) {
       state.reminderText = showReminder;
+      $("btn-no-rem")?.classList.toggle("active", !showReminder);
+      $("btn-rem")?.classList.toggle("active", showReminder);
       renderIntroCard();
       if (inQuiz) { const q = questionData[currentQuestion - 1]; setCard("opp", q.opp); setCard("you", q.you); }
     }
@@ -1301,6 +1310,10 @@
       if (!ok) $("submit-btn").disabled = false;
     }
     async function sendPayload(payload, statusEl, outEl, thanks) {
+      if (TEST_MODE) {
+        if (statusEl) statusEl.textContent = "Test mode: nothing was submitted.";
+        return true;
+      }
       if (!ENDPOINT || ENDPOINT === "PASTE_DEPLOYED_APPS_SCRIPT_URL_HERE") {
         statusEl.textContent = "Survey storage is not connected yet. Please contact the survey administrator.";
         return false;
