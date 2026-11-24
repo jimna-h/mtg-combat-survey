@@ -553,6 +553,27 @@
       font-size: .78rem;
     }
 
+    #elig-status:not(:empty),
+    #submit-status:not(:empty) {
+      position: fixed;
+      z-index: 1000;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(520px, calc(100vw - 32px));
+      margin: 0;
+      padding: 22px 26px;
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, .65);
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 650;
+      line-height: 1.5;
+    }
+
     .intro-panel {
       max-width: 1320px;
       margin: 8px auto;
