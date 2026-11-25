@@ -363,6 +363,12 @@
       background: #1d4ed8;
     }
 
+    .card-wrapper.tutorial-marker-focus::after {
+      filter: drop-shadow(0 0 5px #a3e635) drop-shadow(0 0 10px #a3e635);
+      outline: 3px solid #a3e635;
+      outline-offset: 3px;
+    }
+
     .card-wrapper.tapped {
       --rot: 90deg;
     }
@@ -514,6 +520,21 @@
     .step-item.active strong {
       color: var(--accent);
     }
+
+    .stats-guide {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .stats-guide strong { color: var(--text); }
+
+    .pt-diagram { display: block; width: 100%; height: auto; margin: 4px 0 0; }
+    .pt-diagram text { font-family: inherit; }
+    .stats-definitions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stats-definitions p { font-size: 0.74rem; line-height: 1.3; margin: 3px 0 0; }
+    #power-toughness-guide h2 { margin-bottom: 3px; }
+    #power-toughness-guide > p { margin: 3px 0; }
 
     .step-item.done {
       border-color: rgba(148, 163, 184, 0.35);
@@ -1062,6 +1083,30 @@
             </li>
           </ol>
         </div>
+        <div class="card-panel" id="power-toughness-guide">
+          <h2>Power &amp; Toughness</h2>
+          <p class="stats-guide">A creature’s bottom-right numbers show power first, then toughness.</p>
+          <svg class="pt-diagram" viewBox="0 0 260 120" role="img" aria-labelledby="pt-title pt-desc">
+            <title id="pt-title">Power and toughness on a creature card</title>
+            <desc id="pt-desc">The card corner shows 3 slash 4. An arrow points to 3 for power and 4 for toughness.</desc>
+            <defs>
+              <marker id="pt-arrow" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+                <path d="M0,0 L7,3.5 L0,7 Z" fill="#7dd3fc" />
+              </marker>
+            </defs>
+            <path d="M12 8 H230 V62 Q230 76 216 76 H12 Z" fill="#d6d3cc" stroke="#94a3b8" stroke-width="5" />
+            <rect x="56" y="20" width="132" height="42" rx="16" fill="#fff" />
+            <text x="122" y="50" text-anchor="middle" fill="#111827" font-size="29" font-weight="800">3/4</text>
+            <path d="M75 103 Q82 85 101 51" fill="none" stroke="#7dd3fc" stroke-width="2.5" marker-end="url(#pt-arrow)" />
+            <path d="M190 103 Q177 82 145 51" fill="none" stroke="#7dd3fc" stroke-width="2.5" marker-end="url(#pt-arrow)" />
+            <text x="68" y="117" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700">Power</text>
+            <text x="193" y="117" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700">Toughness</text>
+          </svg>
+          <div class="stats-definitions">
+            <p class="stats-guide">Damage dealt.</p>
+            <p class="stats-guide">Damage it takes to be destroyed.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1210,8 +1255,18 @@
       $("next-question").disabled = currentQuestion === 10;
     }
     function updateTutorialCallout(step) {
-      document.querySelectorAll(".tutorial-focus").forEach((el) => el.classList.remove("tutorial-focus"));
-      ({ 4: ["opp-legal-btn"], 5: ["opp-destroy-btn"], 6: ["opp-life-control"], 7: ["play-combat-btn"] }[step] || []).forEach((id) => $(id)?.classList.add("tutorial-focus"));
+      document.querySelectorAll(".tutorial-focus, .tutorial-marker-focus").forEach((el) => el.classList.remove("tutorial-focus", "tutorial-marker-focus"));
+      ({
+        1: ["opp-card-text", "you-card-text", "opp-card-stats", "you-card-stats", "power-toughness-guide"],
+        2: [],
+        3: [],
+        4: ["opp-legal-btn"],
+        5: ["opp-destroy-btn", "opp-card-stats", "you-card-stats", "power-toughness-guide"],
+        6: ["opp-life-control"],
+        7: ["play-combat-btn"]
+      }[step] || []).forEach((id) => $(id)?.classList.add("tutorial-focus"));
+      if (step === 2) $("you-card-wrap")?.classList.add("tutorial-marker-focus");
+      if (step === 3) ["you-card-wrap", "opp-card-wrap"].forEach((id) => $(id)?.classList.add("tutorial-marker-focus"));
     }
     function moveTutorial(direction) {
       const hint = $("tutorial-hint"), next = $("tutorial-next");
@@ -1231,11 +1286,11 @@
         ["Question 0 · Welcome", "This survey asks you to work out what happens in 10 short combat scenarios from the card game Magic: The Gathering. No experience is needed. Most creatures have abilities such as flying or lifelink. Your survey version may or may not explain what an ability does. Either way, do your best to figure out how it affects combat. Please don't look anything up or discuss the survey until you're done. First, we'll practice in the play area shown here."],
         ["Question 0 · Read the cards", "These practice creatures have no abilities. There are two numbers that matter for creatures: power is the amount of damage the creature deals (like an attack stat), and toughness is the amount of damage it takes to destroy the creature (like a health stat). These can be seen in the bottom right of their card: Your Highland Giant is a 3/4, so it has 3 power and 4 toughness."],
         ["Question 0 · Declare attackers", "When your Highland Giant attacks your opponent, it becomes tapped and I'll mark it with a red sword. Being 'tapped' basically just means it's been 'used up' for the turn."],
-        ["Question 0 · Declare blockers", "The opponent declares Sanctuary Cat as blocking your Highland Giant. I'll mark it with a blue shield and highlight both of them. Blocking does not cause creatures to tap."],
+        ["Question 0 · Declare blockers", "The opponent declares Sanctuary Cat as blocking your Highland Giant. I'll mark it with a blue shield and highlight both of them in purple to show that the creature is blocked. Blocking does not cause creatures to tap."],
         ["Question 0 · Evaluate blockers", "Before damage, evaluate each block for legality. There's nothing stopping the Sanctuary Cat from blocking your Highland Giant, so no worries here. In other questions, a block may not be legal, so think about that before resolving damage."],
         ["Question 0 · Deal combat damage", "Now resolve combat damage. Both creatures deal damage to each other at the same time: Highland Giant deals 3 damage to Sanctuary Cat, and Sanctuary Cat deals 1 damage to Highland Giant. The cat has 2 toughness, so 3 damage destroys it. The giant has 4 toughness, so 1 damage does not destroy it. Mark the blocker destroyed before continuing."],
-        ["Question 0 · Practice life totals", "Because your attacker was blocked, the opponent takes no damage, so their life stays at 10. To practice the life controls, set the opponent's life to 9, then set it back to 10."],
-        ["Question 0 · Complete", "Practice complete. Press Play Combat to watch the combat sequence. During the quiz, you can use it to set up the scenario, but it treats creatures as if they have no abilities, so you may need to correct the result. Press it now to continue."]
+        ["Question 0 · Practice life totals", "Because your attacker was blocked, the opponent takes no damage, so their life stays at 10. To practice the life controls, set the opponent's life to 9, then set it back to 10. If an attacker is not blocked, it will deal damage equal to its power to the opponent."],
+        ["Question 0 · Complete", "Practice complete! For each question, press Play Combat on the right to set up the combat situation. This animation will assume both creatures have no abilities and will not mark either as destroyed, so you will need to correct it. Press it now to re-setup this practice scenario. To clarify again: pressing the Play Combat will always tap your creature and the opponent's creature will always block it, but sometimes the creatures' abilities will make that incorrect and it is your job to try to figure out how the combat should actually look at the end."]
       ];
       $("tutorial-step-label").textContent = steps[tutorialStep][0];
       $("tutorial-copy").textContent = steps[tutorialStep][1];
